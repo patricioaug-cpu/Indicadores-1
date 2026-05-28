@@ -1,0 +1,6 @@
+{
+  "name": "Centro de Indicadores",
+  "description": "Plataforma integrada de inteligência industrial, técnica e financeira com dados de commodities, telemetria energética, normas técnicas e infraestrutura em tempo real.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
