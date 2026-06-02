@@ -56,6 +56,15 @@ export default function App() {
     }
   }, []);
 
+  // Synchronize document.documentElement class for perfect dark mode support
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   // Toggle theme utility
   const handleToggleDarkMode = () => {
     const nextTheme = !isDarkMode;
