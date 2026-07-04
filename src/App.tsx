@@ -9,6 +9,8 @@ import EnergySystemSection from './components/EnergySystemSection';
 import DatacentersSection from './components/DatacentersSection';
 import SinapiSection from './components/SinapiSection';
 import ExitModal from './components/ExitModal';
+import FloatingPipWindow, { PipWindowData } from './components/FloatingPipWindow';
+import StockExchangeSection from './components/StockExchangeSection';
 
 // Load initial parameters and calculators
 import {
@@ -17,8 +19,13 @@ import {
   initialDatacenters,
   INITIAL_USD_BRL,
   rollTheDiceAndCalculateUpdates,
-  getFullFormattedDate
+  getFullFormattedDate,
+  initialStocks,
+  fetchRealStockData,
+  rollStockExchangeData
 } from './utils/dataMock';
+
+import { StockExchangeData } from './types';
 
 import {
   Zap,
@@ -32,17 +39,112 @@ export default function App() {
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true); // Default to Dark mode for tech-premium aesthetic
 
+  // Picture-in-Picture Windows States
+  const [pipWindows, setPipWindows] = useState<PipWindowData[]>([]);
+  const [maxZIndex, setMaxZIndex] = useState<number>(9000);
+
+  // PIP Window Event Handlers
+  const handleOpenCnnVideo = () => {
+    const id = `cnn-${Date.now()}`;
+    const nextZIndex = maxZIndex + 1;
+    setMaxZIndex(nextZIndex);
+
+    // Default PIP window size (aspect ratio of Youtube standard player is 16:9 + titlebar)
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // Use a safety margin so that borders are never cut off
+    const margin = screenWidth < 640 ? 12 : 24;
+    
+    // Constrain dimensions to the screen size minus margins
+    const width = Math.min(480, screenWidth - margin * 2);
+    const height = Math.min(310, screenHeight - margin * 2);
+
+    // Stagger layout position based on existing open windows
+    const count = pipWindows.length;
+    const offset = (count % 6) * 20;
+
+    // Center position
+    let x = (screenWidth - width) / 2 + offset;
+    let y = (screenHeight - height) / 2 + offset;
+
+    // Keep within viewport boundaries
+    if (x + width > screenWidth - margin) {
+      x = screenWidth - width - margin;
+    }
+    if (y + height > screenHeight - margin) {
+      y = screenHeight - height - margin;
+    }
+
+    // Double check that it's not negative or clipped
+    x = Math.max(margin, x);
+    y = Math.max(margin, y);
+
+    const newWindow: PipWindowData = {
+      id,
+      title: `CNN #${count + 1}`,
+      videoUrl: 'https://www.youtube.com/embed/_rC_-V1AXEM?autoplay=1',
+      x,
+      y,
+      width,
+      height,
+      zIndex: nextZIndex
+    };
+
+    setPipWindows(prev => [...prev, newWindow]);
+  };
+
+  const handleFocusPipWindow = (id: string) => {
+    const nextZIndex = maxZIndex + 1;
+    setMaxZIndex(nextZIndex);
+    setPipWindows(prev => prev.map(win => {
+      if (win.id === id) {
+        return { ...win, zIndex: nextZIndex };
+      }
+      return win;
+    }));
+  };
+
+  const handleUpdatePipWindow = (id: string, updates: Partial<PipWindowData>) => {
+    setPipWindows(prev => prev.map(win => {
+      if (win.id === id) {
+        return { ...win, ...updates };
+      }
+      return win;
+    }));
+  };
+
+  const handleClosePipWindow = (id: string) => {
+    setPipWindows(prev => prev.filter(win => win.id !== id));
+  };
+
   // System States
   const [usdBRL, setUsdBRL] = useState<number>(INITIAL_USD_BRL);
   const [ons, setONS] = useState(initialONS);
   const [aneel, setANEEL] = useState(initialANEEL);
   const [datacenters] = useState(initialDatacenters);
+  const [stocks, setStocks] = useState<StockExchangeData[]>(initialStocks);
 
   // App control states
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<string>(getFullFormattedDate());
   const [isExitOpen, setIsExitOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('all');
+
+  // Load live stocks on initial mount
+  useEffect(() => {
+    async function loadLiveStocksOnMount() {
+      try {
+        const liveData = await fetchRealStockData();
+        if (Object.keys(liveData).length > 0) {
+          setStocks(prev => rollStockExchangeData(prev, liveData));
+        }
+      } catch (e) {
+        console.warn('Initial stock fetch failed:', e);
+      }
+    }
+    loadLiveStocksOnMount();
+  }, []);
 
   // Load theme preference on mount
   useEffect(() => {
@@ -78,8 +180,15 @@ export default function App() {
   const handleRefreshData = () => {
     setIsRefreshing(true);
     
-    // Smooth loading timeout animation for technical feel
-    setTimeout(() => {
+    // Fetch and roll data asynchronously with a smooth transition
+    setTimeout(async () => {
+      let liveData = {};
+      try {
+        liveData = await fetchRealStockData();
+      } catch (e) {
+        console.warn('Refresh stocks fetch failed:', e);
+      }
+
       const rolled = rollTheDiceAndCalculateUpdates(
         usdBRL,
         ons,
@@ -89,6 +198,7 @@ export default function App() {
       setUsdBRL(rolled.newUSDBRL);
       setONS(rolled.updatedONS);
       setANEEL(rolled.updatedANEEL);
+      setStocks(prev => rollStockExchangeData(prev, Object.keys(liveData).length > 0 ? liveData : undefined));
 
       const nextTime = getFullFormattedDate();
       setLastUpdated(nextTime);
@@ -98,9 +208,9 @@ export default function App() {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300 font-sans flex flex-col justify-between selection:bg-indigo-505 selection:text-white">
+      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300 font-sans flex flex-col lg:flex-row selection:bg-indigo-505 selection:text-white">
         
-        {/* Header Widget */}
+        {/* Responsive Left Sidebar / Top Header */}
         <Header
           isDarkMode={isDarkMode}
           toggleDarkMode={handleToggleDarkMode}
@@ -108,67 +218,16 @@ export default function App() {
           isRefreshing={isRefreshing}
           lastUpdated={lastUpdated}
           onExitClick={() => setIsExitOpen(true)}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenCnnVideo={handleOpenCnnVideo}
         />
 
-        {/* Categories Tab Navigation Bar */}
-        <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-850 px-4 py-2 sm:px-6 sticky top-[61px] sm:top-[69px] z-45 shadow-sm transition-all duration-300 no-print">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3 py-1">
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2 w-full md:w-auto">
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer w-full sm:w-auto ${
-                  activeTab === 'all'
-                    ? 'bg-slate-900 text-white dark:bg-blue-650'
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>Geral</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('energy')}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer w-full sm:w-auto ${
-                  activeTab === 'energy'
-                    ? 'bg-slate-900 text-white dark:bg-blue-650'
-                    : 'text-slate-500 hover:text-slate-950 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Zap className="w-3.5 h-3.5" />
-                <span>Energia</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('datacenters')}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer w-full sm:w-auto ${
-                  activeTab === 'datacenters'
-                    ? 'bg-slate-900 text-white dark:bg-blue-650'
-                    : 'text-slate-500 hover:text-slate-950 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Globe className="w-3.5 h-3.5" />
-                <span>Datacenters</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab('sinapi')}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer w-full sm:w-auto ${
-                  activeTab === 'sinapi'
-                    ? 'bg-slate-900 text-white dark:bg-blue-650'
-                    : 'text-slate-500 hover:text-slate-950 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Coins className="w-3.5 h-3.5" />
-                <span>SINAPI</span>
-              </button>
-            </div>
-
-
-          </div>
-        </div>
-
-        {/* Main Content Area */}
-        <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6">
+        {/* Main layout right panel containing scrollable content & footer */}
+        <div className="flex-grow flex flex-col min-h-screen lg:h-screen lg:overflow-y-auto w-full">
+          
+          {/* Main Content Area */}
+          <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6">
           <div className="space-y-8">
             
             {/* Sincronizing Spinner Modal alert */}
@@ -231,6 +290,85 @@ export default function App() {
               }`}>
                 <SinapiSection />
               </div>
+
+              {/* AREA: Stock Exchanges Summary Cards */}
+              <div className={`${
+                activeTab === 'all' ? 'block' : 'hidden print:block'
+              }`}>
+                <div className="bg-white dark:bg-slate-900/60 rounded-2xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-850/80 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h3 className="text-sm font-black font-sans tracking-tight text-slate-900 dark:text-slate-50 uppercase">
+                        Bolsas de Valores Globais
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-sans mt-0.5">
+                        Resumo consolidado dos índices de referência das principais praças financeiras mundiais
+                      </p>
+                    </div>
+                    
+                    <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-850 px-2.5 py-1 rounded border border-slate-150 dark:border-slate-800">
+                      CORS PROXY INTEGRADO
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {stocks.map(stock => {
+                      const isUp = stock.change >= 0;
+                      return (
+                        <button
+                          key={stock.id}
+                          onClick={() => setActiveTab(stock.id)}
+                          className="flex flex-col justify-between p-4 rounded-xl border border-slate-150 dark:border-slate-800/80 hover:border-indigo-500/50 dark:hover:border-indigo-550 bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-all cursor-pointer text-left focus:outline-hidden"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-mono font-bold text-indigo-505 dark:text-indigo-400 uppercase tracking-wider">
+                                {stock.symbol}
+                              </span>
+                              <span className={`w-2 h-2 rounded-full ${stock.status === 'Aberto' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-600'}`} title={`Mercado ${stock.status}`} />
+                            </div>
+                            
+                            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1 font-sans line-clamp-1">
+                              {stock.indexName}
+                            </h4>
+                            <span className="text-[10px] text-slate-450 dark:text-slate-500 block">
+                              {stock.name.split('(')[0].trim()}
+                            </span>
+                          </div>
+
+                          <div className="mt-4">
+                            <div className="text-base font-mono font-black text-slate-900 dark:text-slate-100">
+                              {stock.currency} {stock.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            
+                            <div className={`flex items-center gap-1.5 text-[11px] font-mono font-bold mt-0.5 ${
+                              isUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-450'
+                            }`}>
+                              <span>{isUp ? '▲' : '▼'}</span>
+                              <span>{isUp ? '+' : ''}{stock.changePercent.toFixed(2)}%</span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Individual Stock Exchange Sections */}
+              {stocks.map(stock => {
+                if (activeTab === stock.id) {
+                  return (
+                    <div key={stock.id}>
+                      <StockExchangeSection
+                        data={stock}
+                        isRefreshing={isRefreshing}
+                      />
+                    </div>
+                  );
+                }
+                return null;
+              })}
             </div>
 
             {/* Project Bottom Notice Info */}
@@ -244,19 +382,21 @@ export default function App() {
               </div>
             </div>
           </div>
-        </main>
+          </main>
 
-        {/* Global Footer */}
-        <footer className="border-t border-slate-200/80 dark:border-slate-850 bg-white dark:bg-slate-900 py-6 px-4 mt-12 transition-all duration-300 no-print">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-450 dark:text-slate-400">
-            <div>
-              <span className="font-mono font-bold text-slate-750 dark:text-slate-205">INDICADORES</span> • Painel Integrado de Governança e Decisão
+          {/* Global Footer */}
+          <footer className="border-t border-slate-200/80 dark:border-slate-850 bg-white dark:bg-slate-900 py-6 px-4 mt-12 transition-all duration-300 no-print">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-450 dark:text-slate-400">
+              <div>
+                <span className="font-mono font-bold text-slate-750 dark:text-slate-205">INDICADORES</span> • Painel Integrado de Governança e Decisão
+              </div>
+              <div className="font-mono text-[10px]">
+                ASHRAE • ONS • ANEEL • Datacenter Insights
+              </div>
             </div>
-            <div className="font-mono text-[10px]">
-              ASHRAE • ONS • ANEEL • Datacenter Insights
-            </div>
-          </div>
-        </footer>
+          </footer>
+
+        </div>
 
         {/* Exit Application Modal */}
         <ExitModal
@@ -264,6 +404,20 @@ export default function App() {
           onClose={() => setIsExitOpen(false)}
           views={3}
         />
+
+        {/* Picture-in-Picture Floating Windows Layer */}
+        <div className="fixed inset-0 pointer-events-none z-[9990] no-print" id="pip-windows-overlay">
+          {pipWindows.map(win => (
+            <FloatingPipWindow
+              key={win.id}
+              windowData={win}
+              onClose={handleClosePipWindow}
+              onFocus={handleFocusPipWindow}
+              onUpdate={handleUpdatePipWindow}
+              maxZIndex={maxZIndex}
+            />
+          ))}
+        </div>
 
       </div>
     </div>

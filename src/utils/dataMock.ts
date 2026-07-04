@@ -6,7 +6,8 @@
 import {
   ONSTelemetry,
   ANEELTariff,
-  DatacenterMetric
+  DatacenterMetric,
+  StockExchangeData
 } from '../types';
 
 // Helper to format ISO time nicely
@@ -161,3 +162,216 @@ export function rollTheDiceAndCalculateUpdates(
     updatedANEEL
   };
 }
+
+// Initial Stock Exchange Data
+export const initialStocks: StockExchangeData[] = [
+  {
+    id: 'bovespa',
+    name: "Bolsa de Valores de São Paulo (B3)",
+    indexName: "Ibovespa",
+    symbol: "^BVSP",
+    price: 118450.25,
+    change: 450.20,
+    changePercent: 0.38,
+    currency: "R$",
+    volume: "3.2B",
+    status: 'Aberto',
+    high: 119100.00,
+    low: 117950.00,
+    topMovers: [
+      { symbol: "VALE3.SA", name: "Vale S.A.", price: 61.24, change: 0.85, changePercent: 1.41 },
+      { symbol: "PETR4.SA", name: "Petrobras PN", price: 38.50, change: -0.42, changePercent: -1.08 },
+      { symbol: "ITUB4.SA", name: "Itaú Unibanco PN", price: 34.12, change: 0.35, changePercent: 1.04 },
+      { symbol: "BBDC4.SA", name: "Banco Bradesco PN", price: 13.85, change: 0.12, changePercent: 0.87 }
+    ],
+    lastUpdated: getFullFormattedDate()
+  },
+  {
+    id: 'nyse',
+    name: "New York Stock Exchange (NYSE)",
+    indexName: "Dow Jones Industrial Average",
+    symbol: "^DJI",
+    price: 39150.80,
+    change: -120.40,
+    changePercent: -0.31,
+    currency: "$",
+    volume: "4.8B",
+    status: 'Aberto',
+    high: 39300.00,
+    low: 39050.00,
+    topMovers: [
+      { symbol: "JPM", name: "JPMorgan Chase & Co.", price: 198.50, change: 1.20, changePercent: 0.61 },
+      { symbol: "DIS", name: "The Walt Disney Company", price: 112.35, change: -0.80, changePercent: -0.71 },
+      { symbol: "KO", name: "The Coca-Cola Company", price: 62.40, change: 0.15, changePercent: 0.24 },
+      { symbol: "XOM", name: "Exxon Mobil Corporation", price: 115.80, change: -1.45, changePercent: -1.24 }
+    ],
+    lastUpdated: getFullFormattedDate()
+  },
+  {
+    id: 'londres',
+    name: "London Stock Exchange (LSE)",
+    indexName: "FTSE 100",
+    symbol: "^FTSE",
+    price: 7950.35,
+    change: 15.85,
+    changePercent: 0.20,
+    currency: "£",
+    volume: "1.1B",
+    status: 'Fechado',
+    high: 7980.00,
+    low: 7920.00,
+    topMovers: [
+      { symbol: "SHEL.L", name: "Shell plc", price: 2840.50, change: 12.00, changePercent: 0.42 },
+      { symbol: "AZN.L", name: "AstraZeneca plc", price: 11340.00, change: -45.00, changePercent: -0.40 },
+      { symbol: "HSBA.L", name: "HSBC Holdings plc", price: 645.20, change: 3.40, changePercent: 0.53 },
+      { symbol: "BP.L", name: "BP p.l.c.", price: 512.40, change: -2.10, changePercent: -0.41 }
+    ],
+    lastUpdated: getFullFormattedDate()
+  },
+  {
+    id: 'nasdaq',
+    name: "Nasdaq Stock Market",
+    indexName: "Nasdaq Composite",
+    symbol: "^IXIC",
+    price: 16420.50,
+    change: 210.15,
+    changePercent: 1.30,
+    currency: "$",
+    volume: "5.5B",
+    status: 'Aberto',
+    high: 16500.00,
+    low: 16280.00,
+    topMovers: [
+      { symbol: "AAPL", name: "Apple Inc.", price: 182.52, change: 1.84, changePercent: 1.02 },
+      { symbol: "MSFT", name: "Microsoft Corporation", price: 415.60, change: 4.80, changePercent: 1.17 },
+      { symbol: "NVDA", name: "NVIDIA Corporation", price: 875.12, change: 25.40, changePercent: 2.99 },
+      { symbol: "TSLA", name: "Tesla Inc.", price: 175.45, change: -3.50, changePercent: -1.96 }
+    ],
+    lastUpdated: getFullFormattedDate()
+  }
+];
+
+// Real stock API fetch using multiple fallbacks/CORS bypasses
+export async function fetchRealStockData(): Promise<Record<string, { price: number; change: number; changePercent: number }>> {
+  const symbols = ['^BVSP', '^DJI', '^FTSE', '^IXIC'];
+  const symbolsStr = symbols.join(',');
+  const targetUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolsStr}`;
+  
+  // Try proxies to bypass CORS
+  const proxies = [
+    (url: string) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+    (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`
+  ];
+
+  for (const getProxyUrl of proxies) {
+    try {
+      const proxyUrl = getProxyUrl(targetUrl);
+      const res = await fetch(proxyUrl);
+      if (!res.ok) continue;
+      
+      let data;
+      if (proxyUrl.includes('allorigins')) {
+        const raw = await res.json();
+        data = JSON.parse(raw.contents);
+      } else {
+        data = await res.json();
+      }
+
+      if (data && data.quoteResponse && data.quoteResponse.result) {
+        const result = data.quoteResponse.result;
+        const parsed: Record<string, { price: number; change: number; changePercent: number }> = {};
+        
+        result.forEach((item: any) => {
+          if (item.symbol && item.regularMarketPrice !== undefined) {
+            parsed[item.symbol] = {
+              price: Number(item.regularMarketPrice),
+              change: Number(item.regularMarketChange || 0),
+              changePercent: Number(item.regularMarketChangePercent || 0)
+            };
+          }
+        });
+        
+        if (Object.keys(parsed).length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch from proxy:', e);
+    }
+  }
+  
+  return {};
+}
+
+// Fluctuates or integrates real data
+export function rollStockExchangeData(
+  currentStocks: StockExchangeData[],
+  realData?: Record<string, { price: number; change: number; changePercent: number }>
+): StockExchangeData[] {
+  return currentStocks.map(stock => {
+    let price = stock.price;
+    let change = stock.change;
+    let changePercent = stock.changePercent;
+    
+    if (realData && realData[stock.symbol]) {
+      const rd = realData[stock.symbol];
+      price = rd.price;
+      change = rd.change;
+      changePercent = rd.changePercent;
+    } else {
+      // Simulate fluctuation
+      const pctChange = (Math.random() - 0.48) * 0.005; // slight upward drift
+      const delta = stock.price * pctChange;
+      price = Number((stock.price + delta).toFixed(2));
+      change = Number((stock.change + delta).toFixed(2));
+      changePercent = Number(((change / (price - change)) * 100).toFixed(2));
+    }
+    
+    // Fluctuate individual movers
+    const updatedMovers = stock.topMovers.map(mover => {
+      const pctMoverChange = (Math.random() - 0.5) * 0.015;
+      const deltaMover = mover.price * pctMoverChange;
+      const mPrice = Number((mover.price + deltaMover).toFixed(2));
+      const mChange = Number((mover.change + deltaMover).toFixed(2));
+      const mChangePercent = Number(((mChange / (mPrice - mChange)) * 100).toFixed(2));
+      return {
+        ...mover,
+        price: mPrice,
+        change: mChange,
+        changePercent: mChangePercent
+      };
+    });
+
+    // Trading hours simulation (São Paulo: 10-18, NYSE/Nasdaq: 9:30-16:00, London: 8-16:30)
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay();
+    const isWeekend = day === 0 || day === 6;
+    let status: 'Aberto' | 'Fechado' = 'Aberto';
+    
+    if (isWeekend) {
+      status = 'Fechado';
+    } else {
+      if (stock.id === 'bovespa' && (hour < 10 || hour >= 18)) status = 'Fechado';
+      else if (stock.id === 'nyse' && (hour < 9 || hour >= 16)) status = 'Fechado';
+      else if (stock.id === 'londres' && (hour < 8 || hour >= 16)) status = 'Fechado';
+      else if (stock.id === 'nasdaq' && (hour < 9 || hour >= 16)) status = 'Fechado';
+    }
+
+    const high = Math.max(stock.high, price);
+    const low = Math.min(stock.low, price);
+
+    return {
+      ...stock,
+      price,
+      change,
+      changePercent,
+      topMovers: updatedMovers,
+      status,
+      high,
+      low,
+      lastUpdated: getFullFormattedDate()
+    };
+  });
+}
+

@@ -52,3 +52,30 @@ export interface DatacenterMetric {
   cleanEnergyPercentage: number;
   coolingTech: string;
 }
+
+// Stock Exchange Data types
+export interface StockMover {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+}
+
+export interface StockExchangeData {
+  id: string; // bovespa, nyse, londres, nasdaq
+  name: string;
+  indexName: string;
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  currency: string;
+  volume: string;
+  status: 'Aberto' | 'Fechado';
+  high: number;
+  low: number;
+  topMovers: StockMover[];
+  lastUpdated: string;
+}
+
