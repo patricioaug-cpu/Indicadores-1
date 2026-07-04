@@ -178,31 +178,38 @@ export default function App() {
 
   // Sincronizar / Refresh logic
   const handleRefreshData = () => {
+    // Evita múltiplos cliques simultâneos
+    if (isRefreshing) return;
     setIsRefreshing(true);
     
     // Fetch and roll data asynchronously with a smooth transition
     setTimeout(async () => {
-      let liveData = {};
       try {
-        liveData = await fetchRealStockData();
-      } catch (e) {
-        console.warn('Refresh stocks fetch failed:', e);
+        let liveData = {};
+        try {
+          liveData = await fetchRealStockData();
+        } catch (e) {
+          console.warn('Refresh stocks fetch failed:', e);
+        }
+
+        const rolled = rollTheDiceAndCalculateUpdates(
+          usdBRL,
+          ons,
+          aneel
+        );
+
+        setUsdBRL(rolled.newUSDBRL);
+        setONS(rolled.updatedONS);
+        setANEEL(rolled.updatedANEEL);
+        setStocks(prev => rollStockExchangeData(prev, Object.keys(liveData).length > 0 ? liveData : undefined));
+
+        const nextTime = getFullFormattedDate();
+        setLastUpdated(nextTime);
+      } catch (err) {
+        console.error('Error recalculating global indicators matrix:', err);
+      } finally {
+        setIsRefreshing(false);
       }
-
-      const rolled = rollTheDiceAndCalculateUpdates(
-        usdBRL,
-        ons,
-        aneel
-      );
-
-      setUsdBRL(rolled.newUSDBRL);
-      setONS(rolled.updatedONS);
-      setANEEL(rolled.updatedANEEL);
-      setStocks(prev => rollStockExchangeData(prev, Object.keys(liveData).length > 0 ? liveData : undefined));
-
-      const nextTime = getFullFormattedDate();
-      setLastUpdated(nextTime);
-      setIsRefreshing(false);
     }, 850);
   };
 

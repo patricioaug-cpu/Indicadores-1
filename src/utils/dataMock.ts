@@ -251,6 +251,23 @@ export const initialStocks: StockExchangeData[] = [
   }
 ];
 
+// Fetch with timeout helper to prevent hanging on slow proxies
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 1500): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
 // Real stock API fetch using multiple fallbacks/CORS bypasses
 export async function fetchRealStockData(): Promise<Record<string, { price: number; change: number; changePercent: number }>> {
   const symbols = ['^BVSP', '^DJI', '^FTSE', '^IXIC'];
@@ -266,7 +283,7 @@ export async function fetchRealStockData(): Promise<Record<string, { price: numb
   for (const getProxyUrl of proxies) {
     try {
       const proxyUrl = getProxyUrl(targetUrl);
-      const res = await fetch(proxyUrl);
+      const res = await fetchWithTimeout(proxyUrl, {}, 1500);
       if (!res.ok) continue;
       
       let data;
