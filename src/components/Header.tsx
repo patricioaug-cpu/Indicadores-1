@@ -40,7 +40,6 @@ interface HeaderProps {
   onExitClick: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  onOpenCnnVideo: () => void;
 }
 
 export default function Header({
@@ -51,8 +50,7 @@ export default function Header({
   lastUpdated,
   onExitClick,
   activeTab,
-  setActiveTab,
-  onOpenCnnVideo
+  setActiveTab
 }: HeaderProps) {
   const [brtTime, setBrtTime] = useState('');
   const [views, setViews] = useState(1);
@@ -148,16 +146,6 @@ export default function Header({
               <span className="font-mono text-xs font-black tracking-wider text-teal-400">IND</span>
             </div>
             <span className="font-bold text-sm sm:text-base tracking-tight text-slate-900 dark:text-slate-50">INDICADORES</span>
-            
-            {/* CNN button */}
-            <button
-              onClick={onOpenCnnVideo}
-              className="flex items-center gap-1 px-2 py-0.5 rounded border border-red-200 dark:border-red-900/30 bg-red-50/80 dark:bg-red-955/20 text-[10px] font-bold text-red-655 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 transition-all cursor-pointer shrink-0"
-              title="Assistir CNN"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
-              <span>CNN</span>
-            </button>
           </div>
         </div>
         
@@ -191,16 +179,6 @@ export default function Header({
                   <span className="font-mono text-xs font-black tracking-wider text-teal-400">IND</span>
                 </div>
                 <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-slate-50">INDICADORES</span>
-                
-                {/* CNN button */}
-                <button
-                  onClick={onOpenCnnVideo}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded border border-red-200 dark:border-red-900/30 bg-red-50/80 dark:bg-red-955/20 text-[10px] font-bold text-red-655 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 transition-all cursor-pointer shrink-0"
-                  title="Assistir CNN"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
-                  <span>CNN</span>
-                </button>
               </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -227,7 +205,6 @@ export default function Header({
                   onExitClick();
                 }}
                 setIsPromoOpen={setIsPromoOpen}
-                onOpenCnnVideo={onOpenCnnVideo}
               />
             </div>
           </div>
@@ -247,7 +224,6 @@ export default function Header({
           toggleDarkMode={toggleDarkMode}
           onExitClick={onExitClick}
           setIsPromoOpen={setIsPromoOpen}
-          onOpenCnnVideo={onOpenCnnVideo}
         />
       </aside>
 
@@ -469,7 +445,6 @@ interface SidebarContentProps {
   toggleDarkMode: () => void;
   onExitClick: () => void;
   setIsPromoOpen: (isOpen: boolean) => void;
-  onOpenCnnVideo: () => void;
 }
 
 function SidebarContent({
@@ -482,8 +457,7 @@ function SidebarContent({
   isDarkMode,
   toggleDarkMode,
   onExitClick,
-  setIsPromoOpen,
-  onOpenCnnVideo
+  setIsPromoOpen
 }: SidebarContentProps) {
   return (
     <div className="flex flex-col h-full justify-between gap-6">
@@ -500,16 +474,6 @@ function SidebarContent({
                 <h1 className="text-base font-bold font-sans tracking-tight text-slate-900 dark:text-slate-50">
                   INDICADORES
                 </h1>
-                
-                {/* CNN button */}
-                <button
-                  onClick={onOpenCnnVideo}
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-900/30 bg-red-50/80 dark:bg-red-955/20 text-[9px] font-bold text-red-655 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 transition-all cursor-pointer shrink-0"
-                  title="Assistir CNN"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
-                  <span>CNN</span>
-                </button>
 
                 <span className="bg-teal-550/10 text-teal-650 dark:text-teal-400 text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
                   Real-Time

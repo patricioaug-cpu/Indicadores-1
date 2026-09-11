@@ -53,6 +53,27 @@ export interface DatacenterMetric {
   coolingTech: string;
 }
 
+// SINAPI types
+export interface SinapiComponent {
+  name: string;
+  quantity: number;
+  unit: string;
+  totalCost: number;
+}
+
+export interface SinapiItem {
+  id: string;
+  code: string;
+  description: string;
+  category: 'Material' | 'Mão de Obra' | 'Composição';
+  unit: string;
+  basePriceSP: number;
+  previousPriceSP?: number;
+  changePercent?: number;
+  specification?: string;
+  components?: SinapiComponent[];
+}
+
 // Stock Exchange Data types
 export interface StockMover {
   symbol: string;

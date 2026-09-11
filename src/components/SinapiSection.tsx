@@ -18,160 +18,13 @@ import {
   HelpCircle,
   Wrench,
   Percent,
-  Coins
+  Coins,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
-
-export interface SinapiItem {
-  id: string;
-  code: string;
-  description: string;
-  category: 'Material' | 'Mão de Obra' | 'Composição';
-  unit: string;
-  basePriceSP: number;
-  specification?: string;
-  components?: { name: string; quantity: number; unit: string; totalCost: number }[];
-}
-
-// Highly realistic and formal SINAPI references/compositions
-const SINAPI_ITEMS_DATA: SinapiItem[] = [
-  {
-    id: 's1',
-    code: '91854',
-    description: 'Eletroduto rígido roscável, PVC, DN 25 mm (3/4"), instalado em laje ou parede - Fornecimento e Instalação',
-    category: 'Composição',
-    unit: 'M',
-    basePriceSP: 18.52,
-    specification: 'NBR 15465. Inclui eletroduto de PVC rígido, conexões, guias de tração e mão de obra de encanador para passagens em estruturas.',
-    components: [
-      { name: 'Eletroduto PVC rígido de 3/4"', quantity: 1.05, unit: 'M', totalCost: 5.25 },
-      { name: 'Mão de obra de Eletricista', quantity: 0.25, unit: 'H', totalCost: 7.12 },
-      { name: 'Mão de obra de Auxiliar', quantity: 0.25, unit: 'H', totalCost: 5.52 },
-      { name: 'Acessórios e conexões', quantity: 1, unit: 'UN', totalCost: 0.63 }
-    ]
-  },
-  {
-    id: 's2',
-    code: '101616',
-    description: 'Disjuntor termomagnético tripolar padrão DIN (curva C), 25A a 50A, 10kA de interrupção - Fornecimento e Instalação',
-    category: 'Composição',
-    unit: 'UN',
-    basePriceSP: 148.90,
-    specification: 'NBR IEC 60898. Atende proteção de circuitos alimentadores trifásicos de TI e HVAC de baixo porte.',
-    components: [
-      { name: 'Disjuntor termomagnético tripolar DIN 32A', quantity: 1.0, unit: 'UN', totalCost: 115.00 },
-      { name: 'Mão de obra de Eletricista', quantity: 0.7, unit: 'H', totalCost: 19.95 },
-      { name: 'Mão de obra de Auxiliar de Eletricista', quantity: 0.6, unit: 'H', totalCost: 13.26 },
-      { name: 'Terminais de compressão de 10mm²', quantity: 3, unit: 'UN', totalCost: 0.69 }
-    ]
-  },
-  {
-    id: 's3',
-    code: '92984',
-    description: 'Cabo de cobre flexível isolado, 6 mm², anti-chama 450/750V, instalado em conduto fixo - Sem conexões adicionais',
-    category: 'Material',
-    unit: 'M',
-    basePriceSP: 6.84,
-    specification: 'Condutor de cobre eletrolítico, isolação em PVC antichama (BWF). NBR NM 247-3.'
-  },
-  {
-    id: 's4',
-    code: '88264',
-    description: 'Eletricista com encargos complementares (Horista de instalações gerais)',
-    category: 'Mão de Obra',
-    unit: 'H',
-    basePriceSP: 28.50,
-    specification: 'Salário base da categoria acrescido de encargos sociais (cerca de 115% desonerado/não-desonerado) e EPIs regulamentares.'
-  },
-  {
-    id: 's5',
-    code: '88247',
-    description: 'Auxiliar de eletricista com encargos complementares',
-    category: 'Mão de Obra',
-    unit: 'H',
-    basePriceSP: 22.10,
-    specification: 'Encargos complementares de alimentação, transporte, exames e EPIs incluídos conforme convenções vigentes.'
-  },
-  {
-    id: 's6',
-    code: '98546',
-    description: 'Leito para cabos em chapa de aço galvanizada, tipo leve, 200x50 mm, instalado em teto de galpão corporativo',
-    category: 'Composição',
-    unit: 'M',
-    basePriceSP: 124.70,
-    specification: 'Chapa de aço galvanizado #18. Inclui suportação metálica com perfilados de ancoragem a cada 1.5 metros.',
-    components: [
-      { name: 'Leito metálico galvanizado 200x50mm', quantity: 1.02, unit: 'M', totalCost: 74.20 },
-      { name: 'Perfilado de aço perfurado 38x38mm', quantity: 0.9, unit: 'M', totalCost: 14.80 },
-      { name: 'Mão de obra de Eletricista', quantity: 0.8, unit: 'H', totalCost: 22.80 },
-      { name: 'Elementos de parafusação e tirantes 3/8"', quantity: 1, unit: 'Conjunto', totalCost: 12.90 }
-    ]
-  },
-  {
-    id: 's7',
-    code: '92802',
-    description: 'Concreto usinado bombeável, fck = 30 MPa, lançado e adensado em lajes e pisos estruturais',
-    category: 'Material',
-    unit: 'M³',
-    basePriceSP: 418.00,
-    specification: 'Pedido mínimo em betoneira carregada. NBR 7212. Rigoroso controle tecnológico de amostras cilíndricas.'
-  },
-  {
-    id: 's8',
-    code: '88316',
-    description: 'Servente com encargos complementares',
-    category: 'Mão de Obra',
-    unit: 'H',
-    basePriceSP: 19.80,
-    specification: 'Mão de obra geral de suporte, transporte interno e limpeza de frentes de trabalho.'
-  },
-  {
-    id: 's9',
-    code: '93181',
-    description: 'Aplicação de manta asfáltica elastomérica 3 mm para impermeabilização de laje técnica descoberta',
-    category: 'Composição',
-    unit: 'M²',
-    basePriceSP: 89.20,
-    specification: 'Atende NBR 9952. Inclui demão de primer asfáltico frio e sobreposição selada por maçarico a gás liquefeito.',
-    components: [
-      { name: 'Manta asfáltica premium 3mm', quantity: 1.15, unit: 'M²', totalCost: 45.10 },
-      { name: 'Primer asfáltico base solvente', quantity: 0.4, unit: 'L', totalCost: 8.90 },
-      { name: 'Mão de obra de Aplicador de impermeabilização', quantity: 0.8, unit: 'H', totalCost: 24.20 },
-      { name: 'Gás GLP para maçarico corporativo', quantity: 0.15, unit: 'KG', totalCost: 11.00 }
-    ]
-  },
-  {
-    id: 's10',
-    code: '102486',
-    description: 'Aparelho de ar condicionado Split High Wall inversor de frequência, capacidade 12000 BTU/h - Somente equipamento',
-    category: 'Material',
-    unit: 'UN',
-    basePriceSP: 1890.00,
-    specification: 'Classificação de eficiência energética Procel Classe A. Gás refrigerante ecológico R410A.'
-  },
-  {
-    id: 's11',
-    code: '91871',
-    description: 'Caixa de embutir plástica 4"x2" para interruptores e tomadas - Fornecimento e Instalação',
-    category: 'Composição',
-    unit: 'UN',
-    basePriceSP: 11.45,
-    components: [
-      { name: 'Caixa plástica 4x2', quantity: 1.0, unit: 'UN', totalCost: 2.10 },
-      { name: 'Mão de obra de Eletricista', quantity: 0.15, unit: 'H', totalCost: 4.28 },
-      { name: 'Mão de obra de Auxiliar', quantity: 0.15, unit: 'H', totalCost: 3.32 },
-      { name: 'Argamassa para chumbamento', quantity: 0.5, unit: 'KG', totalCost: 1.75 }
-    ]
-  },
-  {
-    id: 's12',
-    code: '92210',
-    description: 'Brita graduada para sub-base de pavimentos técnicos de brita / drenagem técnica',
-    category: 'Material',
-    unit: 'M³',
-    basePriceSP: 115.00,
-    specification: 'Mistura produzida em usina contendo distribuições de pedra 1, pedra 2, pó de pedra e pedrisco fino.'
-  }
-];
+import { SinapiItem } from '../types';
+import { initialSinapiItems, getCurrentSinapiReference } from '../utils/dataMock';
 
 // UF dynamic cost multiplier factor settings
 const STATE_FACTORS = [
@@ -184,7 +37,23 @@ const STATE_FACTORS = [
   { code: 'AM', name: 'Amazonas', factor: 1.05 }
 ];
 
-export default function SinapiSection() {
+export interface SinapiSectionProps {
+  items?: SinapiItem[];
+  onUpdateItems?: (items: SinapiItem[]) => void;
+  lastUpdated?: string;
+  isRefreshing?: boolean;
+  onRefresh?: () => void;
+  referenceDate?: string;
+}
+
+export default function SinapiSection({
+  items = initialSinapiItems,
+  onUpdateItems,
+  lastUpdated,
+  isRefreshing = false,
+  onRefresh,
+  referenceDate
+}: SinapiSectionProps) {
   // Navigation states
   const [selectedState, setSelectedState] = useState<string>('SP');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -193,8 +62,8 @@ export default function SinapiSection() {
   // Selected detail item state
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
 
-  // Fast Budget / Orçamento simulation state
-  const [budgetItems, setBudgetItems] = useState<{ item: SinapiItem; quantity: number }[]>([]);
+  // Fast Budget / Orçamento simulation state using item IDs for reactive price updates
+  const [budgetEntries, setBudgetEntries] = useState<{ id: string; quantity: number }[]>([]);
   const [bdiPercent, setBdiPercent] = useState<number>(25); // Default BDI to 25%
 
   // Compute active multiplier coefficient
@@ -207,9 +76,18 @@ export default function SinapiSection() {
     return Number((basePrice * activeUF.factor).toFixed(2));
   };
 
+  // Dynamically map budget items with the latest prices from items prop
+  const budgetItems = useMemo(() => {
+    return budgetEntries.map(entry => {
+      const item = items.find(i => i.id === entry.id) || initialSinapiItems.find(i => i.id === entry.id);
+      if (!item) return null;
+      return { item, quantity: entry.quantity };
+    }).filter((b): b is { item: SinapiItem; quantity: number } => b !== null);
+  }, [budgetEntries, items]);
+
   // Filter items list on search + tab
   const filteredItems = useMemo(() => {
-    return SINAPI_ITEMS_DATA.filter(item => {
+    return items.filter(item => {
       // Category filter
       if (categoryFilter !== 'All' && item.category !== categoryFilter) {
         return false;
@@ -225,31 +103,31 @@ export default function SinapiSection() {
         (item.specification && item.specification.toLowerCase().includes(term))
       );
     });
-  }, [searchTerm, categoryFilter]);
+  }, [items, searchTerm, categoryFilter]);
 
   // Selected item modal/card helper
   const focusedItem = useMemo(() => {
-    return SINAPI_ITEMS_DATA.find(i => i.id === focusedItemId) || null;
-  }, [focusedItemId]);
+    return items.find(i => i.id === focusedItemId) || null;
+  }, [items, focusedItemId]);
 
   // Add Item to Quick Budget Simulation list
   const handleAddToBudget = (item: SinapiItem) => {
-    setBudgetItems(prev => {
-      const existsIndex = prev.findIndex(b => b.item.id === item.id);
+    setBudgetEntries(prev => {
+      const existsIndex = prev.findIndex(b => b.id === item.id);
       if (existsIndex > -1) {
         const next = [...prev];
-        next[existsIndex].quantity += 1;
+        next[existsIndex] = { ...next[existsIndex], quantity: next[existsIndex].quantity + 1 };
         return next;
       }
-      return [...prev, { item, quantity: 1 }];
+      return [...prev, { id: item.id, quantity: 1 }];
     });
   };
 
   // Quantities handlers
   const handleUpdateQuantity = (itemId: string, delta: number) => {
-    setBudgetItems(prev => {
+    setBudgetEntries(prev => {
       return prev.map(b => {
-        if (b.item.id === itemId) {
+        if (b.id === itemId) {
           const nextQ = Math.max(0.1, Number((b.quantity + delta).toFixed(2)));
           return { ...b, quantity: nextQ };
         }
@@ -259,11 +137,11 @@ export default function SinapiSection() {
   };
 
   const handleRemoveFromBudget = (itemId: string) => {
-    setBudgetItems(prev => prev.filter(b => b.item.id !== itemId));
+    setBudgetEntries(prev => prev.filter(b => b.id !== itemId));
   };
 
   const handleClearBudget = () => {
-    setBudgetItems([]);
+    setBudgetEntries([]);
   };
 
   // Compute budget cost analytics
@@ -279,17 +157,35 @@ export default function SinapiSection() {
     return budgetSumBase * multiplier;
   }, [budgetSumBase, bdiPercent]);
 
+  // Dynamic SINAPI reference month/year derived from lastUpdated or referenceDate
+  const sinapiReference = useMemo(() => {
+    if (referenceDate) return referenceDate;
+    return getCurrentSinapiReference(lastUpdated);
+  }, [lastUpdated, referenceDate]);
+
   return (
     <div id="sinapi-intelligence-hub" className="space-y-6">
       
       {/* Sector Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-850 pb-5">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="p-1 px-1.5 text-[10px] font-mono font-bold tracking-widest text-indigo-700 bg-indigo-50 dark:text-indigo-400 dark:bg-slate-800 rounded">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="p-1 px-1.5 text-[10px] font-mono font-bold tracking-widest text-indigo-700 bg-indigo-50 dark:text-indigo-400 dark:bg-slate-800 rounded border border-indigo-100 dark:border-slate-700">
               CEF / IBGE COOPERADO
             </span>
-            <span className="text-xs text-slate-500 font-mono">Última Ref: 05/2026</span>
+            <span 
+              className="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 flex items-center gap-1 shadow-xs"
+              title="Mês e Ano de Referência Oficial da Tabela SINAPI"
+            >
+              <span className="text-slate-400 dark:text-slate-500 font-normal">Ref:</span>
+              <span className="text-indigo-600 dark:text-indigo-400 font-black">{sinapiReference}</span>
+            </span>
+            {lastUpdated && (
+              <span className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-mono bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/40 font-semibold">
+                <span className={`w-1.5 h-1.5 rounded-full bg-emerald-500 ${isRefreshing ? 'animate-ping' : 'animate-pulse'}`} />
+                <span>Atualizado: {lastUpdated}</span>
+              </span>
+            )}
           </div>
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             <Coins className="w-5 h-5 text-indigo-505" />
@@ -300,30 +196,42 @@ export default function SinapiSection() {
           </p>
         </div>
 
-        {/* Dynamic State Selection Selector */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0 bg-slate-50 dark:bg-slate-850 p-1.5 rounded-xl border border-slate-200/60 dark:border-slate-800 w-full md:w-auto">
-          <div className="flex items-center gap-1.5 px-2.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
-            <MapPin className="w-3.5 h-3.5 text-indigo-505" />
-            <span>Localizar UF:</span>
+        {/* Dynamic State Selection Selector & Refresh Action */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0 w-full md:w-auto">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200/60 dark:border-slate-800">
+            <MapPin className="w-3.5 h-3.5 text-indigo-505 shrink-0" />
+            <span className="whitespace-nowrap">UF:</span>
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="text-xs font-mono font-bold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-250 dark:border-slate-750 px-2 py-1 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-505 shadow-xs cursor-pointer ml-1"
+            >
+              {STATE_FACTORS.map(uf => (
+                <option key={uf.code} value={uf.code}>
+                  {uf.code} - {uf.name} (x{uf.factor.toFixed(2)})
+                </option>
+              ))}
+            </select>
           </div>
-          <select
-            value={selectedState}
-            onChange={(e) => setSelectedState(e.target.value)}
-            className="text-xs font-mono font-bold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-250 dark:border-slate-750 px-2.5 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-505 shadow-sm cursor-pointer min-w-[230px] sm:min-w-[240px] max-w-full"
-          >
-            {STATE_FACTORS.map(uf => (
-              <option key={uf.code} value={uf.code}>
-                {uf.code} - {uf.name} (x{uf.factor.toFixed(2)})
-              </option>
-            ))}
-          </select>
+
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer shadow-xs disabled:opacity-50 shrink-0 active:scale-95"
+              title="Recalcular e sincronizar tabela SINAPI"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>{isRefreshing ? 'Atualizando...' : 'Atualizar Preços'}</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Grid Layout of Search vs Simulator */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left Side: Items Catalog list (8 cols) */}
+        {/* Left Side: Items Catalog list (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           
           {/* Functional Filters Panel */}
@@ -369,11 +277,14 @@ export default function SinapiSection() {
           {/* Quick Stats count bar */}
           <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 px-1">
             <span>Resultados encontrados: <b className="text-slate-650 dark:text-indigo-400">{filteredItems.length}</b></span>
-            <span>Estabilidade de Preços: ±1.24% de variação mensal</span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Preços sincronizados com a Caixa
+            </span>
           </div>
 
           {/* Catalog items list scrollbox */}
-          <div className="space-y-2.5 max-h-[580px] overflow-y-auto pr-1 scrollbar-none">
+          <div className={`space-y-2.5 max-h-[580px] overflow-y-auto pr-1 scrollbar-none transition-opacity duration-200 ${isRefreshing ? 'opacity-60' : 'opacity-100'}`}>
             {filteredItems.length === 0 ? (
               <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
                 <p className="text-slate-550 dark:text-slate-400 text-xs">Nenhum insumo SINAPI combina com os filtros aplicados.</p>
@@ -388,6 +299,8 @@ export default function SinapiSection() {
               filteredItems.map((item) => {
                 const ufPrice = getUFPrice(item.basePriceSP);
                 const isSelectedForBreakdown = focusedItemId === item.id;
+                const hasChange = item.changePercent !== undefined && item.changePercent !== 0;
+                const isPositive = hasChange && (item.changePercent || 0) > 0;
 
                 return (
                   <div 
@@ -402,7 +315,7 @@ export default function SinapiSection() {
                       
                       {/* Left: Code, Category badge, Description */}
                       <div className="space-y-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono text-xs font-black text-slate-805 dark:text-indigo-350 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                             {item.code}
                           </span>
@@ -416,6 +329,22 @@ export default function SinapiSection() {
                             {item.category}
                           </span>
                           <span className="text-[10px] text-slate-400 font-mono">Unid: {item.unit}</span>
+                          
+                          {/* Price variation tag */}
+                          {hasChange && (
+                            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded inline-flex items-center gap-0.5 ${
+                              isPositive
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40'
+                                : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/40'
+                            }`}>
+                              {isPositive ? (
+                                <TrendingUp className="w-2.5 h-2.5 inline" />
+                              ) : (
+                                <TrendingDown className="w-2.5 h-2.5 inline" />
+                              )}
+                              <span>{isPositive ? `+${item.changePercent?.toFixed(2)}%` : `${item.changePercent?.toFixed(2)}%`}</span>
+                            </span>
+                          )}
                         </div>
                         
                         <h4 className="text-xs font-semibold leading-relaxed text-slate-900 dark:text-slate-100 hover:text-indigo-505 dark:hover:text-indigo-400 cursor-pointer" onClick={() => setFocusedItemId(isSelectedForBreakdown ? null : item.id)}>
@@ -426,16 +355,21 @@ export default function SinapiSection() {
                       {/* Right: Cost value BRL & Simulator add button */}
                       <div className="flex flex-col items-end shrink-0 gap-2">
                         <div className="text-right">
-                          <div className="text-xs font-mono text-slate-400 uppercase tracking-widest leading-none">Preço {activeUF.code}</div>
+                          <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest leading-none">Preço {activeUF.code}</div>
                           <div className="text-sm font-mono font-black text-slate-850 dark:text-slate-50 mt-1">
                             R$ {ufPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
+                          {item.previousPriceSP !== undefined && item.previousPriceSP !== item.basePriceSP && (
+                            <div className="text-[9px] font-mono text-slate-400 mt-0.5">
+                              Ant: R$ {getUFPrice(item.previousPriceSP).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => setFocusedItemId(isSelectedForBreakdown ? null : item.id)}
-                            className="p-1.5 rounded-lg border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 text-[10px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-205 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg border border-slate-200/80 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 text-[10px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-450 dark:hover:text-slate-205 transition-colors cursor-pointer"
                             title="Ver Composição Técnica detalhada"
                           >
                             Análise
@@ -547,7 +481,7 @@ export default function SinapiSection() {
             {/* Selected items basket */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between text-[11px] uppercase font-mono text-slate-400">
-                <span>Lista de Serviços e Materiais</span>
+                <span>Lista de Serviços e Materiais ({budgetItems.length})</span>
                 {budgetItems.length > 0 && (
                   <button 
                     onClick={handleClearBudget}
@@ -608,7 +542,7 @@ export default function SinapiSection() {
                               onChange={(e) => {
                                 const val = Number(e.target.value);
                                 if (!isNaN(val) && val > 0) {
-                                  setBudgetItems(prev => prev.map(b => b.item.id === item.id ? { ...b, quantity: val } : b));
+                                  setBudgetEntries(prev => prev.map(b => b.id === item.id ? { ...b, quantity: val } : b));
                                 }
                               }}
                               className="w-10 text-center text-xs font-mono font-bold bg-transparent border-none focus:outline-none focus:ring-0 p-0"
@@ -679,7 +613,7 @@ export default function SinapiSection() {
                   <span>Conformidade Orçamentária</span>
                 </div>
                 <p className="font-sans">
-                  Sua simulação contempla a contratação de mão de obra e insumos convertidos para a região de <b>{activeUF.name}</b>. O preço simulado serve de orientação prévia de custos sob as diretrizes estatutárias federais de 2026.
+                  Sua simulação contempla a contratação de mão de obra e insumos convertidos para a região de <b>{activeUF.name}</b> sob a referência oficial <b>{sinapiReference}</b>. O preço simulado serve de orientação prévia de custos sob as diretrizes estatutárias federais vigentes.
                 </p>
               </div>
             )}

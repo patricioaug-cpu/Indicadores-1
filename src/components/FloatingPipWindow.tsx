@@ -272,7 +272,7 @@ export default function FloatingPipWindow({
         
         <iframe
           src={videoUrl}
-          title="CNN LIVE Embed Player"
+          title="Video Player"
           className="w-full h-full border-none"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen

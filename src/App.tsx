@@ -17,6 +17,7 @@ import {
   initialONS,
   initialANEEL,
   initialDatacenters,
+  initialSinapiItems,
   INITIAL_USD_BRL,
   rollTheDiceAndCalculateUpdates,
   getFullFormattedDate,
@@ -25,7 +26,7 @@ import {
   rollStockExchangeData
 } from './utils/dataMock';
 
-import { StockExchangeData } from './types';
+import { StockExchangeData, DatacenterMetric, SinapiItem } from './types';
 
 import {
   Zap,
@@ -42,57 +43,6 @@ export default function App() {
   // Picture-in-Picture Windows States
   const [pipWindows, setPipWindows] = useState<PipWindowData[]>([]);
   const [maxZIndex, setMaxZIndex] = useState<number>(9000);
-
-  // PIP Window Event Handlers
-  const handleOpenCnnVideo = () => {
-    const id = `cnn-${Date.now()}`;
-    const nextZIndex = maxZIndex + 1;
-    setMaxZIndex(nextZIndex);
-
-    // Default PIP window size (aspect ratio of Youtube standard player is 16:9 + titlebar)
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-
-    // Use a safety margin so that borders are never cut off
-    const margin = screenWidth < 640 ? 12 : 24;
-    
-    // Constrain dimensions to the screen size minus margins
-    const width = Math.min(480, screenWidth - margin * 2);
-    const height = Math.min(310, screenHeight - margin * 2);
-
-    // Stagger layout position based on existing open windows
-    const count = pipWindows.length;
-    const offset = (count % 6) * 20;
-
-    // Center position
-    let x = (screenWidth - width) / 2 + offset;
-    let y = (screenHeight - height) / 2 + offset;
-
-    // Keep within viewport boundaries
-    if (x + width > screenWidth - margin) {
-      x = screenWidth - width - margin;
-    }
-    if (y + height > screenHeight - margin) {
-      y = screenHeight - height - margin;
-    }
-
-    // Double check that it's not negative or clipped
-    x = Math.max(margin, x);
-    y = Math.max(margin, y);
-
-    const newWindow: PipWindowData = {
-      id,
-      title: `CNN #${count + 1}`,
-      videoUrl: 'https://www.youtube.com/embed/_rC_-V1AXEM?autoplay=1',
-      x,
-      y,
-      width,
-      height,
-      zIndex: nextZIndex
-    };
-
-    setPipWindows(prev => [...prev, newWindow]);
-  };
 
   const handleFocusPipWindow = (id: string) => {
     const nextZIndex = maxZIndex + 1;
@@ -122,7 +72,8 @@ export default function App() {
   const [usdBRL, setUsdBRL] = useState<number>(INITIAL_USD_BRL);
   const [ons, setONS] = useState(initialONS);
   const [aneel, setANEEL] = useState(initialANEEL);
-  const [datacenters] = useState(initialDatacenters);
+  const [datacenters, setDatacenters] = useState<DatacenterMetric[]>(initialDatacenters);
+  const [sinapiItems, setSinapiItems] = useState<SinapiItem[]>(initialSinapiItems);
   const [stocks, setStocks] = useState<StockExchangeData[]>(initialStocks);
 
   // App control states
@@ -195,12 +146,16 @@ export default function App() {
         const rolled = rollTheDiceAndCalculateUpdates(
           usdBRL,
           ons,
-          aneel
+          aneel,
+          datacenters,
+          sinapiItems
         );
 
         setUsdBRL(rolled.newUSDBRL);
         setONS(rolled.updatedONS);
         setANEEL(rolled.updatedANEEL);
+        setDatacenters(rolled.updatedDatacenters);
+        setSinapiItems(rolled.updatedSinapiItems);
         setStocks(prev => rollStockExchangeData(prev, Object.keys(liveData).length > 0 ? liveData : undefined));
 
         const nextTime = getFullFormattedDate();
@@ -227,7 +182,6 @@ export default function App() {
           onExitClick={() => setIsExitOpen(true)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          onOpenCnnVideo={handleOpenCnnVideo}
         />
 
         {/* Main layout right panel containing scrollable content & footer */}
@@ -295,7 +249,13 @@ export default function App() {
               <div className={`bg-white dark:bg-slate-900/60 rounded-2xl p-5 sm:p-6 border border-slate-205/80 dark:border-slate-850/80 shadow-md ${
                 activeTab === 'all' || activeTab === 'sinapi' ? 'block' : 'hidden print:block'
               }`}>
-                <SinapiSection />
+                <SinapiSection
+                  items={sinapiItems}
+                  onUpdateItems={setSinapiItems}
+                  lastUpdated={lastUpdated}
+                  isRefreshing={isRefreshing}
+                  onRefresh={handleRefreshData}
+                />
               </div>
 
               {/* AREA: Stock Exchanges Summary Cards */}

@@ -7,7 +7,8 @@ import {
   ONSTelemetry,
   ANEELTariff,
   DatacenterMetric,
-  StockExchangeData
+  StockExchangeData,
+  SinapiItem
 } from '../types';
 
 // Helper to format ISO time nicely
@@ -28,6 +29,22 @@ export function getFullFormattedDate(): string {
     month: '2-digit',
     year: 'numeric'
   }) + ' - ' + getCurrentFormattedTime();
+}
+
+export function getCurrentSinapiReference(dateString?: string): string {
+  if (dateString) {
+    const [datePart] = dateString.split('-');
+    if (datePart) {
+      const parts = datePart.trim().split('/');
+      if (parts.length === 3) {
+        return `${parts[1]}/${parts[2]}`;
+      }
+    }
+  }
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  return `${month}/${year}`;
 }
 
 // Initial USD/BRL Rate
@@ -88,11 +105,183 @@ export const initialDatacenters: DatacenterMetric[] = [
   { region: 'Oriente Médio e África', totalDatacenters: 180, avgPUE: 1.68, operationalPowerGW: 1.4, cleanEnergyPercentage: 35.0, coolingTech: 'Sistemas de água gelada redundantes e fechados' }
 ];
 
-// Diffs generator to make clicking "Atualizar Dados" very live & dynamic
+// Initial SINAPI Reference Items
+export const initialSinapiItems: SinapiItem[] = [
+  {
+    id: 's1',
+    code: '91854',
+    description: 'Eletroduto rígido roscável, PVC, DN 25 mm (3/4"), instalado em laje ou parede - Fornecimento e Instalação',
+    category: 'Composição',
+    unit: 'M',
+    basePriceSP: 18.52,
+    specification: 'NBR 15465. Inclui eletroduto de PVC rígido, conexões, guias de tração e mão de obra de encanador para passagens em estruturas.',
+    components: [
+      { name: 'Eletroduto PVC rígido de 3/4"', quantity: 1.05, unit: 'M', totalCost: 5.25 },
+      { name: 'Mão de obra de Eletricista', quantity: 0.25, unit: 'H', totalCost: 7.12 },
+      { name: 'Mão de obra de Auxiliar', quantity: 0.25, unit: 'H', totalCost: 5.52 },
+      { name: 'Acessórios e conexões', quantity: 1, unit: 'UN', totalCost: 0.63 }
+    ]
+  },
+  {
+    id: 's2',
+    code: '101616',
+    description: 'Disjuntor termomagnético tripolar padrão DIN (curva C), 25A a 50A, 10kA de interrupção - Fornecimento e Instalação',
+    category: 'Composição',
+    unit: 'UN',
+    basePriceSP: 148.90,
+    specification: 'NBR IEC 60898. Atende proteção de circuitos alimentadores trifásicos de TI e HVAC de baixo porte.',
+    components: [
+      { name: 'Disjuntor termomagnético tripolar DIN 32A', quantity: 1.0, unit: 'UN', totalCost: 115.00 },
+      { name: 'Mão de obra de Eletricista', quantity: 0.7, unit: 'H', totalCost: 19.95 },
+      { name: 'Mão de obra de Auxiliar de Eletricista', quantity: 0.6, unit: 'H', totalCost: 13.26 },
+      { name: 'Terminais de compressão de 10mm²', quantity: 3, unit: 'UN', totalCost: 0.69 }
+    ]
+  },
+  {
+    id: 's3',
+    code: '92984',
+    description: 'Cabo de cobre flexível isolado, 6 mm², anti-chama 450/750V, instalado em conduto fixo - Sem conexões adicionais',
+    category: 'Material',
+    unit: 'M',
+    basePriceSP: 6.84,
+    specification: 'Condutor de cobre eletrolítico, isolação em PVC antichama (BWF). NBR NM 247-3.'
+  },
+  {
+    id: 's4',
+    code: '88264',
+    description: 'Eletricista com encargos complementares (Horista de instalações gerais)',
+    category: 'Mão de Obra',
+    unit: 'H',
+    basePriceSP: 28.50,
+    specification: 'Salário base da categoria acrescido de encargos sociais (cerca de 115% desonerado/não-desonerado) e EPIs regulamentares.'
+  },
+  {
+    id: 's5',
+    code: '88247',
+    description: 'Auxiliar de eletricista com encargos complementares',
+    category: 'Mão de Obra',
+    unit: 'H',
+    basePriceSP: 22.10,
+    specification: 'Encargos complementares de alimentação, transporte, exames e EPIs incluídos conforme convenções vigentes.'
+  },
+  {
+    id: 's6',
+    code: '98546',
+    description: 'Leito para cabos em chapa de aço galvanizada, tipo leve, 200x50 mm, instalado em teto de galpão corporativo',
+    category: 'Composição',
+    unit: 'M',
+    basePriceSP: 124.70,
+    specification: 'Chapa de aço galvanizado #18. Inclui suportação metálica com perfilados de ancoragem a cada 1.5 metros.',
+    components: [
+      { name: 'Leito metálico galvanizado 200x50mm', quantity: 1.02, unit: 'M', totalCost: 74.20 },
+      { name: 'Perfilado de aço perfurado 38x38mm', quantity: 0.9, unit: 'M', totalCost: 14.80 },
+      { name: 'Mão de obra de Eletricista', quantity: 0.8, unit: 'H', totalCost: 22.80 },
+      { name: 'Elementos de parafusação e tirantes 3/8"', quantity: 1, unit: 'Conjunto', totalCost: 12.90 }
+    ]
+  },
+  {
+    id: 's7',
+    code: '92802',
+    description: 'Concreto usinado bombeável, fck = 30 MPa, lançado e adensado em lajes e pisos estruturais',
+    category: 'Material',
+    unit: 'M³',
+    basePriceSP: 418.00,
+    specification: 'Pedido mínimo em betoneira carregada. NBR 7212. Rigoroso controle tecnológico de amostras cilíndricas.'
+  },
+  {
+    id: 's8',
+    code: '88316',
+    description: 'Servente com encargos complementares',
+    category: 'Mão de Obra',
+    unit: 'H',
+    basePriceSP: 19.80,
+    specification: 'Mão de obra geral de suporte, transporte interno e limpeza de frentes de trabalho.'
+  },
+  {
+    id: 's9',
+    code: '93181',
+    description: 'Aplicação de manta asfáltica elastomérica 3 mm para impermeabilização de laje técnica descoberta',
+    category: 'Composição',
+    unit: 'M²',
+    basePriceSP: 89.20,
+    specification: 'Atende NBR 9952. Inclui demão de primer asfáltico frio e sobreposição selada por maçarico a gás liquefeito.',
+    components: [
+      { name: 'Manta asfáltica premium 3mm', quantity: 1.15, unit: 'M²', totalCost: 45.10 },
+      { name: 'Primer asfáltico base solvente', quantity: 0.4, unit: 'L', totalCost: 8.90 },
+      { name: 'Mão de obra de Aplicador de impermeabilização', quantity: 0.8, unit: 'H', totalCost: 24.20 },
+      { name: 'Gás GLP para maçarico corporativo', quantity: 0.15, unit: 'KG', totalCost: 11.00 }
+    ]
+  },
+  {
+    id: 's10',
+    code: '102486',
+    description: 'Aparelho de ar condicionado Split High Wall inversor de frequência, capacidade 12000 BTU/h - Somente equipamento',
+    category: 'Material',
+    unit: 'UN',
+    basePriceSP: 1890.00,
+    specification: 'Classificação de eficiência energética Procel Classe A. Gás refrigerante ecológico R410A.'
+  },
+  {
+    id: 's11',
+    code: '91871',
+    description: 'Caixa de embutir plástica 4"x2" para interruptores e tomadas - Fornecimento e Instalação',
+    category: 'Composição',
+    unit: 'UN',
+    basePriceSP: 11.45,
+    components: [
+      { name: 'Caixa plástica 4x2', quantity: 1.0, unit: 'UN', totalCost: 2.10 },
+      { name: 'Mão de obra de Eletricista', quantity: 0.15, unit: 'H', totalCost: 4.28 },
+      { name: 'Mão de obra de Auxiliar', quantity: 0.15, unit: 'H', totalCost: 3.32 },
+      { name: 'Argamassa para chumbamento', quantity: 0.5, unit: 'KG', totalCost: 1.75 }
+    ]
+  },
+  {
+    id: 's12',
+    code: '92210',
+    description: 'Brita graduada para sub-base de pavimentos técnicos de brita / drenagem técnica',
+    category: 'Material',
+    unit: 'M³',
+    basePriceSP: 115.00,
+    specification: 'Mistura produzida em usina contendo distribuições de pedra 1, pedra 2, pó de pedra e pedrisco fino.'
+  }
+];
+
+// Roll SINAPI Items with realistic price fluctuations and delta indicators
+export function rollSinapiData(items: SinapiItem[]): SinapiItem[] {
+  return items.map((item, index) => {
+    // Generate realistic variance between -2.2% and +2.5%
+    const direction = (index % 3 === 0) ? -1 : 1;
+    const magnitude = 0.4 + (Math.random() * 2.1);
+    const driftPct = Number((direction * magnitude).toFixed(2));
+    const factor = 1 + (driftPct / 100);
+
+    const oldPrice = item.basePriceSP;
+    const newBasePrice = Number((oldPrice * factor).toFixed(2));
+    const actualChange = Number((((newBasePrice - oldPrice) / oldPrice) * 100).toFixed(2));
+
+    // Also adjust composition components proportionally
+    const updatedComponents = item.components?.map(comp => ({
+      ...comp,
+      totalCost: Number((comp.totalCost * factor).toFixed(2))
+    }));
+
+    return {
+      ...item,
+      previousPriceSP: oldPrice,
+      basePriceSP: newBasePrice,
+      changePercent: actualChange,
+      components: updatedComponents
+    };
+  });
+}
+
+// Diffs generator to make clicking "Atualizar Dados" update all application metrics
 export function rollTheDiceAndCalculateUpdates(
   currentUSD_BRL: number,
   ons: ONSTelemetry,
-  aneel: ANEELTariff
+  aneel: ANEELTariff,
+  datacenters?: DatacenterMetric[],
+  sinapiItems?: SinapiItem[]
 ) {
   // 1. Roll shift for USDBRL (drift +-0.02)
   const usdBRLDrift = (Math.random() - 0.5) * 0.03;
@@ -156,10 +345,33 @@ export function rollTheDiceAndCalculateUpdates(
     lastUpdated: getFullFormattedDate()
   };
 
+  // 4. Datacenters metrics updates
+  const baseDatacenters = datacenters || initialDatacenters;
+  const updatedDatacenters = baseDatacenters.map(dc => {
+    const pueDrift = (Math.random() - 0.5) * 0.02;
+    const avgPUE = Number(Math.max(1.10, Math.min(2.0, dc.avgPUE + pueDrift)).toFixed(2));
+    const pwrDrift = (Math.random() - 0.5) * 0.2;
+    const operationalPowerGW = Number(Math.max(0.5, dc.operationalPowerGW + pwrDrift).toFixed(1));
+    const cleanDrift = (Math.random() - 0.5) * 0.8;
+    const cleanEnergyPercentage = Number(Math.max(20, Math.min(100, dc.cleanEnergyPercentage + cleanDrift)).toFixed(1));
+    return {
+      ...dc,
+      avgPUE,
+      operationalPowerGW,
+      cleanEnergyPercentage
+    };
+  });
+
+  // 5. SINAPI items updates
+  const baseSinapi = sinapiItems || initialSinapiItems;
+  const updatedSinapiItems = rollSinapiData(baseSinapi);
+
   return {
     newUSDBRL,
     updatedONS,
-    updatedANEEL
+    updatedANEEL,
+    updatedDatacenters,
+    updatedSinapiItems
   };
 }
 
