@@ -55,10 +55,12 @@ export interface DatacenterMetric {
 
 // SINAPI types
 export interface SinapiComponent {
+  code?: string;
   name: string;
   quantity: number;
   unit: string;
   totalCost: number;
+  type?: 'Material' | 'Mão de Obra' | 'Equipamento' | 'Outros';
 }
 
 export interface SinapiItem {
